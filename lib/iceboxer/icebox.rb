@@ -15,7 +15,12 @@ module Iceboxer
         issues.items.each do |issue|
           unless already_iceboxed?(issue.number)
             puts "Closing #{@repo}/issues/#{issue.number}: #{issue.title}"
-            icebox(issue.number, closer)
+
+            if send_to_product_pains?
+              send_to_product_pains(issue)
+            else
+              icebox(issue.number, closer)
+            end
           end
         end
       end
@@ -39,12 +44,33 @@ module Iceboxer
       comments.any? { |c| c.body =~ /Icebox/ }
     end
 
+    def send_to_product_pains?
+      ENV['PRODUCT_PAINS_COOKIE'].present?
+    end
+
     def icebox(issue, reason)
       Octokit.add_labels_to_an_issue(@repo, issue, ["Icebox"])
       Octokit.add_comment(@repo, issue, message(reason))
       Octokit.close_issue(@repo, issue)
 
       puts "Iceboxed #{@repo}/issues/#{issue}!"
+    end
+
+    def send_to_product_pains(issue)
+      product_id = "5632cf5744c4901301e14e6a"
+      github_url = "https://github.com/#{@repo}/issues/#{issue.number}"
+      product_pains_url = Iceboxer::ProductPains.create_issue(issue, github_url, product_id)
+      Octokit.add_labels_to_an_issue(@repo, issue.number, ["Icebox"])
+      Octokit.add_comment(@repo, issue.number, product_pains_message(product_pains_url))
+      Octokit.close_issue(@repo, issue.number)
+    end
+
+    def product_pains_message(url)
+      <<-MSG.strip_heredoc
+      Hi there! This issue is being closed because it has been inactive for a while.
+
+      But don't worry, it will live on with ProductPains! Check out it's new home: #{url}
+      MSG
     end
 
     def message(reason)
@@ -63,4 +89,3 @@ module Iceboxer
     end
   end
 end
-
