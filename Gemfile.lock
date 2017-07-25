@@ -3,13 +3,15 @@ PATH
   specs:
     iceboxer (0.0.1)
       activesupport
+      dotenv
+      httparty
       octokit
       rake
 
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (4.2.1)
+    activesupport (4.2.5)
       i18n (~> 0.7)
       json (~> 1.7, >= 1.7.7)
       minitest (~> 5.1)
@@ -22,13 +24,18 @@ GEM
       slop (~> 3.6)
     columnize (0.8.9)
     debugger-linecache (1.2.0)
-    faraday (0.9.1)
+    dotenv (2.0.2)
+    faraday (0.9.2)
       multipart-post (>= 1.2, < 3)
+    httparty (0.13.7)
+      json (~> 1.8)
+      multi_xml (>= 0.5.2)
     i18n (0.7.0)
-    json (1.8.2)
-    minitest (5.6.0)
+    json (1.8.3)
+    minitest (5.8.3)
+    multi_xml (0.5.5)
     multipart-post (2.0.0)
-    octokit (3.8.0)
+    octokit (4.2.0)
       sawyer (~> 0.6.0, >= 0.5.3)
     rake (10.4.2)
     sawyer (0.6.0)
@@ -45,3 +52,6 @@ PLATFORMS
 DEPENDENCIES
   byebug
   iceboxer!
+
+BUNDLED WITH
+   1.11.2
