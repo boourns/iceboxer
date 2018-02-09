@@ -1,5 +1,6 @@
 require 'octokit'
 require 'active_support/all'
+require 'uri'
 
 module Iceboxer
   class Icebox
@@ -9,12 +10,16 @@ module Iceboxer
     end
 
     def perform
+      Octokit.auto_paginate = true
+
+      # close stale issues
       closers.each do |closer|
         issues = Octokit.search_issues(closer[:search])
         puts "Found #{issues.items.count} issues to close in #{@repo} ..."
         issues.items.each do |issue|
           unless already_iceboxed?(issue.number)
-            puts "Closing #{@repo}/issues/#{issue.number}: #{issue.title}"
+            puts "Closing https://github.com/#{@repo}/issues/#{issue.number}: #{issue.title}"
+
             icebox(issue.number, closer)
           end
         end
@@ -24,12 +29,10 @@ module Iceboxer
     def closers
       [
         {
-          :search => "repo:#{@repo} is:open created:<#{12.months.ago.to_date.to_s} updated:<#{2.months.ago.to_date.to_s}",
-          :message => "This is older than a year and has not been touched in 2 months."
+          :search => "repo:#{@repo} is:open is:issue created:<#{12.months.ago.to_date.to_s} updated:<#{2.months.ago.to_date.to_s} -label:\"Good First Task\" -label:\"Help Wanted\" -label:\"For Discussion\""
         },
         {
-          :search => "repo:#{@repo} is:open updated:<#{6.months.ago.to_date.to_s}",
-          :message => "This has not been touched in 6 months."
+          :search => "repo:#{@repo} is:open is:issue updated:<#{6.months.ago.to_date.to_s} -label:\"Good First Task\" -label:\"Help Wanted\" -label:\"For Discussion\""
         }
       ]
     end
@@ -40,27 +43,9 @@ module Iceboxer
     end
 
     def icebox(issue, reason)
-      Octokit.add_labels_to_an_issue(@repo, issue, ["Icebox"])
-      Octokit.add_comment(@repo, issue, message(reason))
-      Octokit.close_issue(@repo, issue)
+      Octokit.add_comment(@repo, issue, "@facebook-github-bot icebox")
 
       puts "Iceboxed #{@repo}/issues/#{issue}!"
     end
-
-    def message(reason)
-      <<-MSG.strip_heredoc
-      ![picture of the iceboxer](https://cloud.githubusercontent.com/assets/699550/5107249/0585a470-6fce-11e4-8190-4413c730e8d8.png)
-
-      #{reason[:message]}
-
-      I am closing this as it is stale.
-
-      I have applied the tag 'Icebox' so you can still see it by querying closed issues.
-
-      Developers: Feel free to reopen if you and your team lead agree it is high priority and will be addressed in the next month.
-
-      MSG
-    end
   end
 end
-
